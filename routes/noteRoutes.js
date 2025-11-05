@@ -30,7 +30,7 @@ router.get("/", (req, res) => {
 router.get("/:pageId", async (req, res) => {
     try {
         const { pageId } = req.params;
-        let note = await Note.findOne({ pageId });
+        let note = await Note.findOne({ pageId }).select("-passcode");
         if (!note) {
             note = new Note({ pageId });
             await note.save();
@@ -76,30 +76,27 @@ router.post("/:pageId/upload", upload.single("image"), async (req, res) => {
 
 // POST Set or Verify Passcode
 router.post("/:pageId/passcode", async (req, res) => {
-    try {
-        const { pageId } = req.params;
-        const { passcode } = req.body;
-        let note = await Note.findOne({ pageId });
-        if (!note) return res.json({ status: "not_found" });
+  const { pageId } = req.params;
+  const { passcode } = req.body;
 
-        if (note.passcode === "") {
-            // Set new passcode (6-digit numeric only)
-            if (passcode && passcode.length === 6 && /^\d+$/.test(passcode)) {
-                note.passcode = passcode;
-                await note.save();
-                return res.json({ status: "set" });
-            } else {
-                return res.json({ status: "invalid" });
-            }
-        } else {
-            // Verify
-            if (note.passcode === passcode) return res.json({ status: "success" });
-            return res.json({ status: "fail" });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Server Error");
+  let note = await Note.findOne({ pageId });
+  if (!note) return res.json({ status: "not_found" });
+
+  // If no passcode set — create new (hashed automatically)
+  if (note.passcode === "") {
+    if (passcode.length === 6 && /^\d+$/.test(passcode)) {
+      note.passcode = passcode;
+      await note.save();
+      return res.json({ status: "set" });
+    } else {
+      return res.json({ status: "invalid" });
     }
+  } else {
+    // Verify hashed passcode
+    const isMatch = await note.comparePasscode(passcode);
+    if (isMatch) return res.json({ status: "success" });
+    else return res.json({ status: "fail" });
+  }
 });
 
 module.exports = router;
