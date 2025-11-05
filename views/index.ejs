@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WorkSave — Open Page</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Small layout tweak specifically for index.ejs */
+        .landing {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 60px);
+            flex-direction: column;
+            text-align: center;
+            gap: 16px;
+        }
+        .landing input[type="text"] {
+            padding: 12px;
+            width: 340px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #121212;
+            color: #e0e0e0;
+            outline: none;
+            font-family: 'Courier New', monospace;
+        }
+        .landing .btn {
+            padding: 12px 18px;
+            background: #03dac5;
+            color: #121212;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .hint {
+            color: #9e9e9e;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="margin:0; padding:16px; background:#1e1e1e;">WorkSave</h1>
+
+    <div class="landing">
+        <h2>Enter Page ID</h2>
+        <form id="openForm" action="" onsubmit="openPage(event)">
+            <input id="pageIdInput" type="text" placeholder="e.g. my-notes-123" required />
+            <div style="margin-top: 12px;">
+                <button class="btn" type="submit">Open Page</button>
+            </div>
+        </form>
+        <div class="hint">Enter any unique ID — you can share that URL to open the same note later.</div>
+    </div>
+
+    <script>
+        function openPage(e) {
+            e.preventDefault();
+            const input = document.getElementById("pageIdInput");
+            const id = input.value.trim();
+            if (!id) return;
+            // simple encode to avoid bad chars
+            const safe = encodeURIComponent(id);
+            window.location.href = "/" + safe;
+        }
+    </script>
+</body>
+</html>

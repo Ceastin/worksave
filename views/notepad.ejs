@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notepad - <%= note.pageId %></title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="passcodeOverlay">
+        <h2 id="promptTitle">Enter 6-digit Passcode</h2>
+        <input type="password" id="passcodeInput" maxlength="6">
+        <button onclick="submitPasscode()">Submit</button>
+        <p id="message"></p>
+    </div>
+
+    <h1>Workspace: <%= note.pageId %></h1>
+
+    <textarea id="noteArea" placeholder="Start typing your notes here..." style="display:none;"><%= note.content %></textarea>
+
+    <div id="imageSection" style="display:none;">
+        <h3 style="margin-left:20px; margin-top:12px;">Images</h3>
+        <div style="padding: 0 20px 20px 20px;">
+            <form id="uploadForm" action="/<%= note.pageId %>/upload" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center;">
+                <input type="file" name="image" accept="image/*" required>
+                <button type="submit">Upload</button>
+            </form>
+
+            <div id="imageGallery" style="margin-top:12px;">
+                <% if (note.images && note.images.length > 0) { %>
+                    <% note.images.forEach(img => { %>
+                        <img src="<%= img %>" alt="Uploaded Image" style="margin:8px; width:160px; height:120px; object-fit:cover; border-radius:8px; border:1px solid #333;">
+                    <% }) %>
+                <% } else { %>
+                    <p style="color:#9e9e9e;">No images uploaded yet.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pageId = "<%= note.pageId %>";
+        const textarea = document.getElementById("noteArea");
+        const overlay = document.getElementById("passcodeOverlay");
+        const message = document.getElementById("message");
+        const passcodeInput = document.getElementById("passcodeInput");
+        const imageSection = document.getElementById("imageSection");
+        let timeoutId;
+
+        function submitPasscode() {
+            const passcode = passcodeInput.value;
+            fetch(`/${pageId}/passcode`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `passcode=${passcode}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success" || data.status === "set") {
+                    overlay.style.display = "none";
+                    textarea.style.display = "block";
+                    imageSection.style.display = "block";
+                } else if (data.status === "invalid") {
+                    message.textContent = "Passcode must be 6 digits.";
+                } else if (data.status === "not_found") {
+                    message.textContent = "Page not found.";
+                } else {
+                    message.textContent = "Wrong passcode. If you don't remember it, create a new Page ID.";
+                }
+            });
+        }
+
+        textarea.addEventListener("input", () => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => autosave(), 800);
+        });
+
+        function autosave() {
+            fetch(`/${pageId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `content=${encodeURIComponent(textarea.value)}`
+            });
+        }
+    </script>
+</body>
+</html>
